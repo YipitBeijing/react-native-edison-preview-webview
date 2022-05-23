@@ -13,7 +13,6 @@ const packageName = "react-native-edison-preview-webview";
 
 const InjectScriptName = {
   SetHTML: "setHTML",
-  SetPreviewMode: "setPreviewMode",
 } as const;
 
 const messageBodyFileTargetPath = `file://${RNFS.CachesDirectoryPath}/previewMessageBody.html`;
@@ -78,7 +77,6 @@ type WithoutProps =
 type EdisonWebViewProps = {
   html: string;
   isDarkMode?: boolean;
-  isPreviewMode?: boolean;
   onMessage: (type: WebviewEvent, data: any) => void;
 } & Omit<WebViewProps, WithoutProps>;
 
@@ -110,12 +108,6 @@ export default class RNWebView extends Component<
       prevProps.html !== this.props.html
     ) {
       this.initHtml();
-    }
-    if (prevProps.isPreviewMode !== this.props.isPreviewMode) {
-      this.executeScript(
-        InjectScriptName.SetPreviewMode,
-        String(!!this.props.isPreviewMode)
-      );
     }
   }
 
@@ -155,10 +147,6 @@ export default class RNWebView extends Component<
       if (messageData.type === EventName.IsMounted) {
         this.webviewMounted = true;
         this.initHtml();
-        this.executeScript(
-          InjectScriptName.SetPreviewMode,
-          String(!!this.props.isPreviewMode)
-        );
       } else if (this.props.onMessage) {
         this.props.onMessage(messageData.type, messageData.data);
       }
