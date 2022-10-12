@@ -2,14 +2,16 @@ import { Buffer } from "buffer";
 import React from "react";
 import { EventName } from "../constants";
 import "./styles";
+import { autolink } from "./utils/auto-link";
 import DarkModeUtil from "./utils/dark-mode";
 import OversizeUtil from "./utils/oversize";
 import QuotedHTMLTransformer from "./utils/quoted-html-transformer";
-import ResizeUtil from "./utils/samrt-resize";
+import ResizeUtil from "./utils/smart-resize";
+import SpecialHandle from "./utils/special-handle";
 
 const darkModeStyle = `
   html, body.edo, #edo-container {
-    background-color: #121212 !important;
+    background-color: rgb(37,37,37) !important;
   }
   body {
     color: #fff;
@@ -69,12 +71,17 @@ class App extends React.Component<any, State> {
 
   private setHTML = (params: string) => {
     try {
-      const { html, isDarkMode } = JSON.parse(params);
+      const { html, isDarkMode = false } = JSON.parse(params);
       if (html) {
         const htmlStr = Buffer.from(html, "base64").toString("utf-8");
         // clear the meta to keep style
-        const reg = /<meta\s+name=(['"\s]?)viewport\1\s+content=[^>]*>/gi;
-        const formatHTML = htmlStr.replace(reg, "");
+        const regMeta = /<meta\s+name=(['"\s]?)viewport\1\s+content=[^>]*>/gi;
+        // clear @media for orientation: landscape
+        const regOrientation =
+          /@media screen and [:()\s\w-]*\(orientation: landscape\)/g;
+        const formatHTML = htmlStr
+          .replace(regMeta, "")
+          .replace(regOrientation, "");
         const hasImgOrVideo = this.calcHasImgOrVideo(formatHTML);
         this.setState({
           html: QuotedHTMLTransformer.removeQuotedHTML(formatHTML),
@@ -107,11 +114,12 @@ class App extends React.Component<any, State> {
       if (!container) {
         return;
       }
+      const baseBackground = DarkModeUtil.rgbColor("rgb(37,37,37)");
       Array.from(container.querySelectorAll("*"))
         .reverse()
         .forEach((node) => {
           if (node instanceof HTMLElement) {
-            DarkModeUtil.applyDarkModeForNode(node);
+            DarkModeUtil.applyDarkModeForNode(node, baseBackground);
           }
         });
     } catch (err) {
@@ -145,6 +153,18 @@ class App extends React.Component<any, State> {
     } catch (err) {
       // pass
     }
+  };
+
+  private removeObjectDom = () => {
+    const container = document.getElementById("edo-container");
+    if (!container) {
+      return;
+    }
+    Array.from(container.querySelectorAll("object")).forEach((ele) => {
+      ele.addEventListener("click", (e) => {
+        ele.style.display = "none";
+      });
+    });
   };
 
   private smartResize = () => {
@@ -207,13 +227,32 @@ class App extends React.Component<any, State> {
     }
   };
 
+  private specialHandle = () => {
+    try {
+      const container = document.getElementById("edo-container");
+      if (!container) {
+        return;
+      }
+      Array.from(container.querySelectorAll("*")).forEach((node) => {
+        if (node instanceof HTMLElement) {
+          SpecialHandle.removeFacebookHiddenText(node);
+        }
+      });
+    } catch (err) {
+      // pass
+    }
+  };
+
   private onContentChange = () => {
     if (this.state.isDarkMode) {
       this.applyDarkMode();
     }
+    autolink();
+    this.removeObjectDom();
     this.fixLongURL();
     this.limitImageWidth();
     this.smartResize();
+    this.specialHandle();
 
     if (this.state.isDarkMode) {
       this.debounceOnload();

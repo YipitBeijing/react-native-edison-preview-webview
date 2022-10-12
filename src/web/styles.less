@@ -20,9 +20,12 @@ xmp {
   box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
+  // ON-4154: Long words affect the width of Image
+  // Allow long words to be able to break and wrap onto the next line
+  word-break: break-word;
 
   span {
-    white-space: normal;
+    white-space: normal !important;
   }
 
   table {
@@ -32,6 +35,12 @@ xmp {
   img {
     max-width: 100%;
     object-fit: contain;
+  }
+
+  // ON-1902: The image under tag A has lost its width
+  // ON-798: The image under tag TD has lost its width
+  a > img,td > img {
+    max-width: none;
   }
 
   code {

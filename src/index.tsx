@@ -179,6 +179,7 @@ export default class RNWebView extends Component<
         forceDarkOn={this.props.isDarkMode}
         allowingReadAccessToURL={"file://"}
         onMessage={this.onMessage}
+        mixedContentMode={"always"}
       />
     );
   }
