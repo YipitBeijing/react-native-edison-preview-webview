@@ -2,6 +2,18 @@ import { RegExpUtils } from "./regexp";
 
 type Matchers = [string, RegExp, { exclude: RegExp[] }?];
 
+const matchers: Matchers[] = [
+  [
+    "mailto:",
+    RegExpUtils.emailRegex(),
+    {
+      exclude: [/\..*[/|?].*@/],
+    },
+  ],
+  ["tel:", RegExpUtils.phoneRegex()],
+  ["", RegExpUtils.urlRegex()],
+];
+
 function matchesAnyRegexp(text: string, regexps: RegExp[]) {
   for (const excludeRegexp of regexps) {
     if (excludeRegexp.test(text)) {
@@ -25,7 +37,7 @@ function wrap<K extends keyof HTMLElementTagNameMap>(
   return newNode;
 }
 
-function runOnTextNode(node: Node, matchers: Matchers[]) {
+export function runOnTextNode(node: Node) {
   if (node.parentElement) {
     const withinScript = node.parentElement.tagName === "SCRIPT";
     const withinStyle = node.parentElement.tagName === "STYLE";
@@ -65,29 +77,5 @@ function runOnTextNode(node: Node, matchers: Matchers[]) {
     aTag.href = href;
     aTag.title = href;
     return;
-  }
-}
-
-export function autolink() {
-  // Traverse the new DOM tree and make things that look like links clickable,
-  // and ensure anything with an href has a title attribute.
-  const textWalker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT
-  );
-  const matchers: Matchers[] = [
-    [
-      "mailto:",
-      RegExpUtils.emailRegex(),
-      {
-        exclude: [/\..*[/|?].*@/],
-      },
-    ],
-    ["tel:", RegExpUtils.phoneRegex()],
-    ["", RegExpUtils.urlRegex()],
-  ];
-
-  while (textWalker.nextNode()) {
-    runOnTextNode(textWalker.currentNode, matchers);
   }
 }

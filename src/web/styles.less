@@ -1,5 +1,5 @@
 html,
-body.edo,
+body#root,
 pre,
 xmp {
   margin: 0 !important;
@@ -18,8 +18,8 @@ xmp {
 
 #edo-container {
   box-sizing: border-box;
-  overflow-x: auto;
-  overflow-y: hidden;
+  height: 100%;
+  overflow: hidden;
   // ON-4154: Long words affect the width of Image
   // Allow long words to be able to break and wrap onto the next line
   word-break: break-word;

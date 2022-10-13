@@ -2,7 +2,7 @@ import { Buffer } from "buffer";
 import React from "react";
 import { EventName } from "../constants";
 import "./styles";
-import { autolink } from "./utils/auto-link";
+import { runOnTextNode } from "./utils/auto-link";
 import DarkModeUtil from "./utils/dark-mode";
 import OversizeUtil from "./utils/oversize";
 import QuotedHTMLTransformer from "./utils/quoted-html-transformer";
@@ -10,7 +10,7 @@ import ResizeUtil from "./utils/smart-resize";
 import SpecialHandle from "./utils/special-handle";
 
 const darkModeStyle = `
-  html, body.edo, #edo-container {
+  html, body, #edo-container {
     background-color: rgb(37,37,37) !important;
   }
   body {
@@ -19,7 +19,7 @@ const darkModeStyle = `
 `;
 
 const lightModeStyle = `
-  html, body.edo, #edo-container {
+  html, body, #edo-container {
     background-color: #fffffe !important;
   }
 `;
@@ -33,6 +33,8 @@ type State = {
 
 class App extends React.Component<any, State> {
   private ratio = 1;
+  private windowHeight = 2000;
+  private hasSendOnloadEvent = false;
 
   constructor(props: any) {
     super(props);
@@ -45,8 +47,8 @@ class App extends React.Component<any, State> {
 
   componentDidMount() {
     window.setHTML = this.setHTML;
-
     this.postMessage(EventName.IsMounted, true);
+    this.windowHeight = window.screen.height;
   }
 
   componentDidUpdate(preProps: any, preState: State) {
@@ -119,11 +121,30 @@ class App extends React.Component<any, State> {
         .reverse()
         .forEach((node) => {
           if (node instanceof HTMLElement) {
-            DarkModeUtil.applyDarkModeForNode(node, baseBackground);
+            if (this.shouldApplyRuleDom(node)) {
+              DarkModeUtil.applyDarkModeForNode(node, baseBackground);
+            }
           }
         });
     } catch (err) {
       // pass
+    }
+  };
+
+  private autolink = () => {
+    // Traverse the new DOM tree and make things that look like links clickable,
+    // and ensure anything with an href has a title attribute.
+    const textWalker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT
+    );
+
+    while (textWalker.nextNode()) {
+      const parentElement = textWalker.currentNode.parentElement;
+      if (parentElement && !this.shouldApplyRuleDom(parentElement)) {
+        continue;
+      }
+      runOnTextNode(textWalker.currentNode);
     }
   };
 
@@ -134,7 +155,9 @@ class App extends React.Component<any, State> {
         return;
       }
       Array.from(container.querySelectorAll("a")).forEach((ele) => {
-        OversizeUtil.fixLongURL(ele);
+        if (this.shouldApplyRuleDom(ele)) {
+          OversizeUtil.fixLongURL(ele);
+        }
       });
     } catch (err) {
       // pass
@@ -199,7 +222,9 @@ class App extends React.Component<any, State> {
       try {
         for (const element of fontSizeElements) {
           if (element instanceof HTMLElement) {
-            ResizeUtil.zoomText(element, 1.0 / this.ratio);
+            if (this.shouldApplyRuleDom(element)) {
+              ResizeUtil.zoomText(element, 1.0 / this.ratio);
+            }
           }
         }
       } catch (err) {
@@ -212,10 +237,12 @@ class App extends React.Component<any, State> {
           );
           for (const element of elements) {
             if (element instanceof HTMLElement) {
-              ResizeUtil.scaleDownText(
-                element,
-                (container.offsetWidth - 20) / container.scrollWidth
-              );
+              if (this.shouldApplyRuleDom(element)) {
+                ResizeUtil.scaleDownText(
+                  element,
+                  (container.offsetWidth - 20) / container.scrollWidth
+                );
+              }
             }
           }
         }
@@ -235,7 +262,9 @@ class App extends React.Component<any, State> {
       }
       Array.from(container.querySelectorAll("*")).forEach((node) => {
         if (node instanceof HTMLElement) {
-          SpecialHandle.removeFacebookHiddenText(node);
+          if (this.shouldApplyRuleDom(node)) {
+            SpecialHandle.removeFacebookHiddenText(node);
+          }
         }
       });
     } catch (err) {
@@ -243,25 +272,28 @@ class App extends React.Component<any, State> {
     }
   };
 
+  private shouldApplyRuleDom = (el: HTMLElement) => {
+    return el.getBoundingClientRect().top < this.windowHeight;
+  };
+
   private onContentChange = () => {
     if (this.state.isDarkMode) {
       this.applyDarkMode();
     }
-    autolink();
+    this.autolink();
     this.removeObjectDom();
     this.fixLongURL();
     this.limitImageWidth();
     this.smartResize();
     this.specialHandle();
 
-    if (this.state.isDarkMode) {
+    if (!this.hasSendOnloadEvent) {
       this.debounceOnload();
-    } else {
-      this.onload();
     }
   };
 
   private onload = () => {
+    this.hasSendOnloadEvent = true;
     this.postMessage(EventName.OnLoad, true);
   };
 
@@ -269,17 +301,12 @@ class App extends React.Component<any, State> {
 
   render() {
     const { html, isDarkMode, hasImgOrVideo } = this.state;
-    const containerStyles: React.CSSProperties = !hasImgOrVideo
-      ? { padding: "2ex" }
-      : {};
-    return (
-      <>
-        <style>{isDarkMode ? darkModeStyle : lightModeStyle}</style>
 
-        <div style={containerStyles}>
-          <div dangerouslySetInnerHTML={{ __html: html }}></div>
-        </div>
-      </>
+    return (
+      <div id="edo-container" style={!hasImgOrVideo ? { padding: "2ex" } : {}}>
+        <style>{isDarkMode ? darkModeStyle : lightModeStyle}</style>
+        <div dangerouslySetInnerHTML={{ __html: html }}></div>
+      </div>
     );
   }
 }
