@@ -5,7 +5,6 @@ import "./styles";
 import { runOnTextNode } from "./utils/auto-link";
 import DarkModeUtil from "./utils/dark-mode";
 import OversizeUtil from "./utils/oversize";
-import QuotedHTMLTransformer from "./utils/quoted-html-transformer";
 import ResizeUtil from "./utils/smart-resize";
 import SpecialHandle from "./utils/special-handle";
 
@@ -86,7 +85,7 @@ class App extends React.Component<any, State> {
           .replace(regOrientation, "");
         const hasImgOrVideo = this.calcHasImgOrVideo(formatHTML);
         this.setState({
-          html: QuotedHTMLTransformer.removeQuotedHTML(formatHTML),
+          html: formatHTML,
           hasImgOrVideo,
           isDarkMode,
         });
