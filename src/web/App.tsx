@@ -9,7 +9,7 @@ import ResizeUtil from "./utils/smart-resize";
 import SpecialHandle from "./utils/special-handle";
 
 const darkModeStyle = `
-  html, body, #edo-container {
+  html, body.edo, #edo-container {
     background-color: rgb(37,37,37) !important;
   }
   body {
@@ -18,7 +18,7 @@ const darkModeStyle = `
 `;
 
 const lightModeStyle = `
-  html, body, #edo-container {
+  html, body.edo, #edo-container {
     background-color: #fffffe !important;
   }
 `;
@@ -300,12 +300,17 @@ class App extends React.Component<any, State> {
 
   render() {
     const { html, isDarkMode, hasImgOrVideo } = this.state;
-
+    const containerStyles: React.CSSProperties = !hasImgOrVideo
+      ? { padding: "2ex" }
+      : {};
     return (
-      <div id="edo-container" style={!hasImgOrVideo ? { padding: "2ex" } : {}}>
+      <>
         <style>{isDarkMode ? darkModeStyle : lightModeStyle}</style>
-        <div dangerouslySetInnerHTML={{ __html: html }}></div>
-      </div>
+
+        <div style={containerStyles}>
+          <div dangerouslySetInnerHTML={{ __html: html }}></div>
+        </div>
+      </>
     );
   }
 }
