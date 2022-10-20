@@ -275,11 +275,29 @@ class App extends React.Component<any, State> {
     return el.getBoundingClientRect().top < this.windowHeight;
   };
 
+  private addEventListenerForImage = () => {
+    const container = document.getElementById("edo-container");
+    if (!container) {
+      return;
+    }
+    const images = Array.from(container.querySelectorAll("img"));
+
+    images.forEach((ele) => {
+      // add load event to update webview size
+      ele.addEventListener("load", () => {
+        if (ele.width > container.offsetWidth) {
+          ele.classList.add("edo-limit-width");
+        }
+      });
+    });
+  };
+
   private onContentChange = () => {
     if (this.state.isDarkMode) {
       this.applyDarkMode();
     }
     this.autolink();
+    this.addEventListenerForImage();
     this.removeObjectDom();
     this.fixLongURL();
     this.limitImageWidth();
