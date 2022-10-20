@@ -33,8 +33,14 @@ xmp {
   }
 
   img {
-    max-width: 100vw;
+    max-width: 100%;
     object-fit: contain;
+  }
+
+  // ON-1902: The image under tag A has lost its width
+  // ON-798: The image under tag TD has lost its width
+  a > img,td > img {
+    max-width: 100vw;
   }
 
   code {
@@ -73,7 +79,6 @@ xmp br {
 
 a {
   color: #0097ff;
-  max-width: 100vw;
 }
 
 p {
@@ -81,7 +86,7 @@ p {
 }
 
 img.edo-limit-width {
-  max-width: 100vw !important;
+  max-width: 100% !important;
 }
 
 .edo-overflow-scroll {
