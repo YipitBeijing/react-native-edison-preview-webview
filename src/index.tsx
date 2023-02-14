@@ -107,7 +107,9 @@ export default class RNWebView extends Component<
       prevProps.isDarkMode !== this.props.isDarkMode ||
       prevProps.html !== this.props.html
     ) {
-      this.initHtml();
+      if (this.webviewMounted) {
+        this.initHtml();
+      }
     }
   }
 
