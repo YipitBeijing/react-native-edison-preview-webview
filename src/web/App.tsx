@@ -31,6 +31,7 @@ type State = {
 
 class App extends React.Component<any, State> {
   private ratio = 1;
+  private windowInnerWidth = 0;
   private windowHeight = 2000;
   private hasSendOnloadEvent = false;
 
@@ -44,7 +45,11 @@ class App extends React.Component<any, State> {
   }
 
   componentDidMount() {
+    this.windowInnerWidth = window.innerWidth;
+
     window.setHTML = this.setHTML;
+    window.addEventListener("resize", this.onWindowResize);
+
     this.postMessage(EventName.IsMounted, true);
     this.windowHeight = window.screen.height;
   }
@@ -57,6 +62,14 @@ class App extends React.Component<any, State> {
       this.onContentChange();
     }
   }
+
+  private onWindowResize = () => {
+    if (this.windowInnerWidth != window.innerWidth && this.ratio != 1) {
+      location.reload();
+    } else {
+      this.windowInnerWidth = window.innerWidth;
+    }
+  };
 
   private postMessage = (type: EventType, data: any) => {
     if (window.ReactNativeWebView) {
