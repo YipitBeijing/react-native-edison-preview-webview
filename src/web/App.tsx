@@ -64,10 +64,14 @@ class App extends React.Component<any, State> {
   }
 
   private onWindowResize = () => {
-    if (this.windowInnerWidth != window.innerWidth && this.ratio != 1) {
-      location.reload();
-    } else {
+    if (this.windowInnerWidth != window.innerWidth) {
       this.windowInnerWidth = window.innerWidth;
+
+      if (this.ratio != 1) {
+        location.reload();
+      } else {
+        this.smartResize();
+      }
     }
   };
 
