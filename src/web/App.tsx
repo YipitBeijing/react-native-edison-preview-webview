@@ -336,7 +336,7 @@ class App extends React.Component<any, State> {
     const { html, isDarkMode, hasImgOrVideo } = this.state;
     const containerStyles: React.CSSProperties = !hasImgOrVideo
       ? { padding: "2ex" }
-      : {};
+      : { padding: "2px" };
     return (
       <>
         <style>{isDarkMode ? darkModeStyle : lightModeStyle}</style>
