@@ -22,7 +22,7 @@ const lightModeStyle = `
   }
 `;
 
-type EventType = typeof EventName[keyof typeof EventName];
+type EventType = (typeof EventName)[keyof typeof EventName];
 type State = {
   isDarkMode: boolean;
   hasImgOrVideo: boolean;
@@ -59,7 +59,7 @@ class App extends React.Component<any, State> {
       preState.html !== this.state.html ||
       preState.isDarkMode !== this.state.isDarkMode
     ) {
-      this.onContentChange();
+      this.debounceOnContentChange();
     }
   }
 
@@ -303,6 +303,7 @@ class App extends React.Component<any, State> {
       ele.addEventListener("load", () => {
         if (ele.width > container.offsetWidth) {
           ele.classList.add("edo-limit-width");
+          this.debounceOnContentChange();
         }
       });
     });
@@ -324,6 +325,8 @@ class App extends React.Component<any, State> {
       this.debounceOnload();
     }
   };
+
+  private debounceOnContentChange = debounce(this.onContentChange, 300);
 
   private onload = () => {
     this.hasSendOnloadEvent = true;
