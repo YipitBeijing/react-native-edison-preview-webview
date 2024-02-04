@@ -1,4 +1,3 @@
-import React from "react";
 import { EventName } from "../constants";
 import "./styles";
 import { runOnTextNode } from "./utils/auto-link";
@@ -6,6 +5,8 @@ import DarkModeUtil from "./utils/dark-mode";
 import OversizeUtil from "./utils/oversize";
 import ResizeUtil from "./utils/smart-resize";
 import SpecialHandle from "./utils/special-handle";
+
+export {};
 
 const darkModeStyle = `
   html, body.edo, #edo-container {
@@ -29,22 +30,18 @@ type State = {
   html: string;
 };
 
-class App extends React.Component<any, State> {
+class App {
   private ratio = 1;
   private windowInnerWidth = 0;
   private windowHeight = 2000;
   private hasSendOnloadEvent = false;
+  private state: State = {
+    isDarkMode: false,
+    hasImgOrVideo: false,
+    html: "",
+  };
 
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      isDarkMode: false,
-      hasImgOrVideo: false,
-      html: "",
-    };
-  }
-
-  componentDidMount() {
+  constructor() {
     this.windowInnerWidth = window.innerWidth;
 
     window.setHTML = this.setHTML;
@@ -54,14 +51,21 @@ class App extends React.Component<any, State> {
     this.windowHeight = window.screen.height;
   }
 
-  componentDidUpdate(preProps: any, preState: State) {
+  private setState = <K extends keyof State>(state: Pick<State, K> | State) => {
+    const preState = Object.assign({}, this.state);
+    const nextState = Object.assign({}, this.state);
+    Object.keys(state).forEach((key) => {
+      nextState[key as K] = state[key as K] as State[K];
+    });
+    this.state = nextState;
+    this.render();
     if (
-      preState.html !== this.state.html ||
-      preState.isDarkMode !== this.state.isDarkMode
+      preState.html !== nextState.html ||
+      preState.isDarkMode !== nextState.isDarkMode
     ) {
-      this.debounceOnContentChange();
+      this.onContentChange();
     }
-  }
+  };
 
   private onWindowResize = () => {
     if (this.windowInnerWidth != window.innerWidth) {
@@ -215,7 +219,15 @@ class App extends React.Component<any, State> {
     const targetWidth = window.innerWidth;
     const originalWidth = container.scrollWidth;
     if (originalWidth > targetWidth) {
-      this.ratio = targetWidth / originalWidth;
+      const containerScale = container.style.transform;
+      let scaleX = 1;
+      if (containerScale) {
+        const scale = Number(/\d+\.?\d*/.exec(containerScale));
+        if (!Number.isNaN(scale)) {
+          scaleX = scale;
+        }
+      }
+      this.ratio = targetWidth / (originalWidth * scaleX);
       try {
         ResizeUtil.scaleElement(container, originalWidth, this.ratio);
       } catch (err) {
@@ -313,6 +325,15 @@ class App extends React.Component<any, State> {
     if (this.state.isDarkMode) {
       this.applyDarkMode();
     }
+
+    if (this.state.isDarkMode) {
+      setTimeout(() => {
+        this.onload();
+      }, 300);
+    } else {
+      this.onload();
+    }
+
     this.autolink();
     this.addEventListenerForImage();
     this.removeObjectDom();
@@ -320,35 +341,37 @@ class App extends React.Component<any, State> {
     this.limitImageWidth();
     this.smartResize();
     this.specialHandle();
-
-    if (!this.hasSendOnloadEvent) {
-      this.debounceOnload();
-    }
   };
 
   private debounceOnContentChange = debounce(this.onContentChange, 300);
 
   private onload = () => {
+    if (this.hasSendOnloadEvent) {
+      return;
+    }
     this.hasSendOnloadEvent = true;
     this.postMessage(EventName.OnLoad, true);
   };
 
-  private debounceOnload = debounce(this.onload, 300);
-
   render() {
     const { html, isDarkMode, hasImgOrVideo } = this.state;
-    const containerStyles: React.CSSProperties = !hasImgOrVideo
-      ? { padding: "2ex" }
-      : { padding: "2px" };
-    return (
-      <>
-        <style>{isDarkMode ? darkModeStyle : lightModeStyle}</style>
 
-        <div style={containerStyles}>
-          <div dangerouslySetInnerHTML={{ __html: html }}></div>
-        </div>
-      </>
-    );
+    const globalStyleNode = document.querySelector(".global-style");
+    if (globalStyleNode) {
+      const globalStyle = isDarkMode ? darkModeStyle : lightModeStyle;
+      globalStyleNode.innerHTML = globalStyle || "";
+    }
+
+    const containerNode = document.querySelector("#container");
+    if (containerNode) {
+      const paddingClassName = !hasImgOrVideo ? "padding2ex" : "padding2px";
+      containerNode.classList.add(paddingClassName);
+    }
+
+    const bodyNode = document.querySelector("#body");
+    if (bodyNode) {
+      bodyNode.innerHTML = html;
+    }
   }
 }
 
@@ -365,4 +388,4 @@ function debounce<T extends Array<any>>(
   };
 }
 
-export default App;
+window.onload = () => new App();
