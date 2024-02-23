@@ -219,15 +219,7 @@ class App {
     const targetWidth = window.innerWidth;
     const originalWidth = container.scrollWidth;
     if (originalWidth > targetWidth) {
-      const containerScale = container.style.transform;
-      let scaleX = 1;
-      if (containerScale) {
-        const scale = Number(/\d+\.?\d*/.exec(containerScale));
-        if (!Number.isNaN(scale)) {
-          scaleX = scale;
-        }
-      }
-      this.ratio = targetWidth / (originalWidth * scaleX);
+      this.ratio = targetWidth / originalWidth;
       try {
         ResizeUtil.scaleElement(container, originalWidth, this.ratio);
       } catch (err) {
